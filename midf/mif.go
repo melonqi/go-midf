@@ -84,27 +84,13 @@ fileName: mid/mif name, without extension; For example, if you will read A.mid A
 midOnly: whether only have mid file
 */
 func (mif *Mif) Read(fileName string, midOnly bool) int {
-	mifFileName := fileName + ".mif"
-	mifFile, err := os.Open(mifFileName)
-	defer mifFile.Close()
-
-	if err != nil {
-		mifFileName = fileName + ".MIF"
-		mifFile, err = os.Open(mifFileName)
-		if err != nil {
-			fmt.Printf("Open %s error, %s\n", mifFileName, err.Error())
-			return -110
-		}
-	}
-	//scanner have buffer size, this will cause imcomplete column
-	scanner := bufio.NewScanner(mifFile)
-	ret := mif.Header.getMifHeader(scanner)
+	ret := mif.getMif(fileName)
 	if ret < 0 {
-		fmt.Println("get mif header failed")
+		fmt.Printf("Read %s mif failed %d\n", fileName, ret)
+		return -1
 	}
-	ret = mif.getMifData(scanner)
-	if err = scanner.Err(); err != nil {
-		fmt.Println(err)
+	if !midOnly {
+		ret = mif.getMid(fileName)
 	}
 	return 0
 }
@@ -344,4 +330,97 @@ func getRectGeometry(words []string) (*geom.Extent, int) {
 	}
 
 	return &rect, 0
+}
+
+func (mif *Mif) getMif(fileName string) int {
+	mifFileName := fileName + ".mif"
+	mifFile, err := os.Open(mifFileName)
+	defer mifFile.Close()
+
+	if err != nil {
+		mifFileName = fileName + ".MIF"
+		mifFile, err = os.Open(mifFileName)
+		if err != nil {
+			fmt.Printf("Open %s error, %s\n", mifFileName, err.Error())
+			return -110
+		}
+	}
+	//scanner have buffer size, this will cause imcomplete column
+	scanner := bufio.NewScanner(mifFile)
+	ret := mif.Header.getMifHeader(scanner)
+	if ret < 0 {
+		fmt.Println("get mif header failed")
+	}
+	ret = mif.getMifData(scanner)
+	if err = scanner.Err(); err != nil {
+		fmt.Println(err)
+	}
+	return len(mif.Objects)
+}
+
+func (mif *Mif) getMid(fileName string) int {
+	midFileName := fileName + ".mid"
+	midFile, err := os.Open(midFileName)
+	defer midFile.Close()
+
+	if err != nil {
+		midFileName = fileName + ".MID"
+		midFile, err = os.Open(midFileName)
+		if err != nil {
+			fmt.Printf("Open %s error, %s\n", midFileName, err.Error())
+			return -110
+		}
+	}
+	//scanner have buffer size, this will cause imcomplete column
+	scanner := bufio.NewScanner(midFile)
+	midSize := len(mif.Objects)
+	i := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		if mif.Header.Delimiter == '\t' {
+			line = strings.TrimRight(line, "\n")
+		} else {
+			line = strings.TrimSpace(line)
+		}
+		if len(line) == 0 {
+			continue
+		}
+		if i >= midSize {
+			fmt.Println("mid size not equal to mif")
+			return -1
+		}
+		mif.Objects[i].Attributes = Split(line, mif.Header.Delimiter, '"')
+		if len(mif.Objects[i].Attributes) != mif.Header.ColNum {
+			fmt.Printf("mid attrs size %d not equal to %d\n", len(mif.Objects[i].Attributes), mif.Header.ColNum)
+			return -1
+		}
+		i++
+	}
+
+	if err = scanner.Err(); err != nil {
+		fmt.Println(err)
+	}
+	return 0
+}
+
+/*
+Split will split str by delimiter
+especial is for str contains ""
+*/
+func Split(str string, delimiter byte, especial byte) []string {
+	start := 0
+	especialFlag := false
+	var res []string
+	for i := 0; i < len(str); i++ {
+		if str[i] == especial {
+			especialFlag = !especialFlag
+		}
+
+		if str[i] == delimiter && especialFlag == false {
+			res = append(res, str[start:i])
+			start = i + 1
+		}
+	}
+	res = append(res, str[start:])
+	return res
 }

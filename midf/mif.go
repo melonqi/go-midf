@@ -1,10 +1,6 @@
 package midf
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/go-spatial/geom"

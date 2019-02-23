@@ -3,6 +3,7 @@ package midf
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -36,7 +37,6 @@ type MifHeader struct {
 	ColNames  []string //to make sure every col has same struct, we use slice not map
 	ColTypes  []string
 	NameMap   map[string]int
-	OnlyMid   bool
 }
 
 /*
@@ -49,11 +49,13 @@ func NewMifHeader() *MifHeader {
 		Delimiter: '\t',
 		Coordsys:  CoordsysLL,
 		NameMap:   make(map[string]int),
-		OnlyMid:   false,
 	}
 }
 
-func (header *MifHeader) getMifHeader(scanner *bufio.Scanner) int {
+/*
+GetMifHeader gets mif header from scanner
+*/
+func (header *MifHeader) GetMifHeader(scanner *bufio.Scanner) int {
 	colCnt := -2
 
 	for scanner.Scan() {
@@ -159,5 +161,33 @@ func (header *MifHeader) getCommon(words []string, keyword string, line string, 
 		*colCnt = -1
 	}
 
+	return 0
+}
+
+/*
+SetMifHeader will write mif header to file
+*/
+func (header *MifHeader) SetMifHeader(file *os.File) int {
+	file.WriteString("Version \"" + strconv.Itoa(header.Version) + "\"\n")
+	file.WriteString("Charset \"" + header.Charset + "\"\n")
+
+	var delimiter []byte
+	delimiter = append(delimiter, "Delimiter \""...)
+	delimiter = append(delimiter, header.Delimiter)
+	delimiter = append(delimiter, "\"\n"...)
+	file.Write(delimiter)
+
+	file.WriteString(header.Coordsys + "\n")
+	if len(header.Transform) > 0 {
+		file.WriteString(header.Transform + "\n")
+	}
+	if len(header.ColNames) != len(header.ColTypes) {
+		return -2
+	}
+	file.WriteString("Columns " + strconv.Itoa(header.ColNum) + "\n")
+	for i := 0; i < len(header.ColNames); i++ {
+		file.WriteString("    " + header.ColNames[i] + " " + header.ColTypes[i] + "\n")
+	}
+	file.WriteString("Data\n")
 	return 0
 }

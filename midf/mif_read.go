@@ -15,16 +15,19 @@ Read will read mid/mif from file;
 fileName: mid/mif name, without extension; For example, if you will read A.mid A.mif, just pass A as fileName.
 midOnly: whether only have mid file
 */
-func (mif *Mif) Read(fileName string, midOnly bool) int {
+func (mif *Mif) Read(fileName string) bool {
 	ret := mif.getMif(fileName)
 	if ret < 0 {
 		fmt.Printf("Read %s mif failed %d\n", fileName, ret)
-		return -1
+		return false
 	}
-	if !midOnly {
-		ret = mif.getMid(fileName)
+
+	ret = mif.getMid(fileName)
+	if ret < 0 {
+		fmt.Printf("Read %s mid failed %d\n", fileName, ret)
+		return false
 	}
-	return 0
+	return true
 }
 
 func (mif *Mif) getMifData(scanner *bufio.Scanner) int {
@@ -137,15 +140,15 @@ func getMultiPoints(pointNum int, scanner *bufio.Scanner) [][2]float64 {
 
 func getMultiLineGeometry(words []string, scanner *bufio.Scanner) (*geom.MultiLineString, int) {
 	/*
-	 * PLINE [ MULTIPLE numsections ]
-	 numpts1
-	 x1 y1
-	 x2 y2
-	 :
-	 [ numpts2
-	 x1 y1
-	 x2 y2 ]
-	 :
+		 * PLINE [ MULTIPLE numsections ]
+			numpts1
+			x1 y1
+			x2 y2
+			:
+			[ numpts2
+			x1 y1
+			x2 y2 ]
+			:
 	*/
 
 	var multiLineString geom.MultiLineString
@@ -188,15 +191,15 @@ func getMultiLineGeometry(words []string, scanner *bufio.Scanner) (*geom.MultiLi
 
 func getRegionGeometry(words []string, scanner *bufio.Scanner) (*geom.MultiPolygon, int) {
 	/*
-	 REGION numpolygons
-	 numpts1
-	 x1 y1
-	 x2 y2
-	 :
-	 [ numpts2
-	 x1 y1
-	 x2 y2 ]
-	 :
+		REGION numpolygons
+		numpts1
+		x1 y1
+		x2 y2
+		:
+		[ numpts2
+		x1 y1
+		x2 y2 ]
+		:
 	*/
 	if len(words) != 2 {
 		fmt.Println("wrong words size")
@@ -277,9 +280,9 @@ func (mif *Mif) getMif(fileName string) int {
 			return -110
 		}
 	}
-	//scanner have buffer size, this will cause imcomplete column
+	//scanner have buffer size, this will cause uncomplete column
 	scanner := bufio.NewScanner(mifFile)
-	ret := mif.Header.getMifHeader(scanner)
+	ret := mif.Header.GetMifHeader(scanner)
 	if ret < 0 {
 		fmt.Println("get mif header failed")
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-spatial/geom"
 )
@@ -86,5 +87,20 @@ func (mif *Mif) setMifData(file *os.File) {
 }
 
 func (mif *Mif) setMid(fileName string) int {
+	midFileName := fileName + ".mid"
+	midFile, err := os.Create(midFileName)
+	defer midFile.Close()
+	if err != nil {
+		fmt.Printf("Open %s error, %s\n", midFileName, err.Error())
+		return -1
+	}
+
+	var delimiter []byte
+	delimiter = append(delimiter, mif.Header.Delimiter)
+	sep := string(delimiter)
+	for i := 0; i < len(mif.Objects); i++ {
+		midFile.WriteString(strings.Join(mif.Objects[i].Attributes, sep))
+		midFile.WriteString("\n")
+	}
 	return 0
 }

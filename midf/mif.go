@@ -40,11 +40,11 @@ func (mif Mif) HasColName(name string) bool {
 
 /*
 GetColPos get column index by name;
-Because attributes saved as slice, use index will be fase.
+Because attributes saved as slice, use index will be fast.
 return -1, if can't find col by name
 */
 func (mif Mif) GetColPos(name string) int {
-	if mif.HasColName(name) {
+	if !mif.HasColName(name) {
 		return -1
 	}
 

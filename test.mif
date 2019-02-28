@@ -1,0 +1,9 @@
+Version 300
+Charset "WindowsSimpChinese"
+Delimiter "	"
+CoordSys Earth Projection 1, 0
+Columns 1
+    id Char(16)
+Data
+Point 116 40
+

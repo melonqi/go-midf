@@ -168,7 +168,7 @@ func (header *MifHeader) getCommon(words []string, keyword string, line string, 
 SetMifHeader will write mif header to file
 */
 func (header *MifHeader) SetMifHeader(file *os.File) int {
-	file.WriteString("Version \"" + strconv.Itoa(header.Version) + "\"\n")
+	file.WriteString("Version " + strconv.Itoa(header.Version) + "\n")
 	file.WriteString("Charset \"" + header.Charset + "\"\n")
 
 	var delimiter []byte

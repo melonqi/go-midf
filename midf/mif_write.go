@@ -100,7 +100,9 @@ func (mif *Mif) setMid(fileName string) int {
 	sep := string(delimiter)
 	for i := 0; i < len(mif.Objects); i++ {
 		midFile.WriteString(strings.Join(mif.Objects[i].Attributes, sep))
-		midFile.WriteString("\n")
+		if i != len(mif.Objects)-1 {
+			midFile.WriteString("\n")
+		}
 	}
 	return 0
 }
